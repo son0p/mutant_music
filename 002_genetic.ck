@@ -1,20 +1,3 @@
-
-// 4 => int C; //number of bees
-// SinOsc s[C]; // Oscillators and Pans for each bee
-// Pan2 p[C];
-// ADSR e[C];
-// NRev r[C];
-// Gain gBees;
-// for ( 0 => int ii ; ii < C ; ++ii ) {
-//     s[ii] => e[ii] => r[ii] => gBees => p[ii] => dac;
-//     ( 0.01::second, 0.01::second, (1.0/C), 0.6::second ) => e[ii].set;
-//     r[ii].mix(0.09);
-//     s[ii].gain(0.3/C);
-//      => s[ii].freq;
-// }
-
-
-
 SinOsc s;
 Pan2 p;
 JCRev r;
@@ -31,22 +14,22 @@ JCRev r2;
 s => r => p => dac;
 s2 => r2 => p2 => dac;
 
+// esta es la melodía que el sistema debe alcanzar
 [ 64, 66, 68, 71, 73] @=> int goal[];
 
+// se inicializan los arreglos
 int seq[5];
 int sequence[goal.cap()];
 int sequence2[goal.cap()];
 
-// Create a random sequence
+// se crean secuencias aleatorias
 for( 0 => int i; i < goal.cap()-1; i++)
   {
     Math.random2(10, 127) =>  sequence[i];
     Math.random2(10, 127) =>  sequence2[i];
   }
 
-
-
-
+// una función para probabilidad
 function int intChance( int percent, int value1, int value2)
 {
     int percentArray[100];
@@ -59,7 +42,7 @@ function int intChance( int percent, int value1, int value2)
     return selected;
 }
 
-//
+// funciones para mutar los arreglos aleatorios
 function int mutate(){
     goal[Math.random2(0, sequence.cap()-1)] =>  sequence[Math.random2(0, goal.cap()-1)];
 }
@@ -67,6 +50,28 @@ function int mutate2(){
     goal[Math.random2(0, sequence2.cap()-1)] =>  sequence2[Math.random2(0, goal.cap()-1)];
 }
 
+// evalua que tan distante esta de la meta
+function void evaluate()
+{
+  while(true)
+    {
+      for( 0 => int i; i < goal.cap()-1; i++)
+        {
+          if(sequence[i] == goal[i])
+            {
+              <<< "melodía 1: encontró ",  goal[i]>>>;
+            }
+          if( sequence2[i] == goal[i])
+            {
+              <<< "melodía 2: encontró ",  goal[i]>>>;
+            }
+          500::ms => now;
+        }
+    }
+ 
+}
+
+// suena las secuencias
 function void playSequence (int sequence[]){
     while (true){
         for( 0 => int i; i < (sequence.cap()-1); i++){
@@ -77,7 +82,7 @@ function void playSequence (int sequence[]){
         if(chance == 1)
             {
                 mutate();
-                <<< "mutate">>>;
+                <<< "muta 1">>>;
             }
     }
 }
@@ -92,12 +97,12 @@ function void playSequence2 (int seq2[]){
         if(chance == 1)
             {
                 mutate2();
-                <<< "mutate2">>>;
+                <<< "muta 2">>>;
             }
     }
 }
 
-
+spork~ evaluate();
 spork~  playSequence(sequence);
 spork~  playSequence2(sequence2);
 while(true){ 10::ms => now;}
