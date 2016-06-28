@@ -31,12 +31,19 @@ JCRev r2;
 s => r => p => dac;
 s2 => r2 => p2 => dac;
 
-[ 64, 66, 68, 71, 73] @=> int nucleotides[];
+[ 64, 66, 68, 71, 73] @=> int goal[];
 
 int seq[5];
+int sequence[goal.cap()];
+int sequence2[goal.cap()];
 
-[ 66, 64, 68, 73, 71 ] @=> int sequence[];
-[ 66, 64, 68, 73, 71 ] @=> int sequence2[];
+// Create a random sequence
+for( 0 => int i; i < goal.cap()-1; i++)
+  {
+    Math.random2(10, 127) =>  sequence[i];
+    Math.random2(10, 127) =>  sequence2[i];
+  }
+
 
 
 
@@ -54,17 +61,17 @@ function int intChance( int percent, int value1, int value2)
 
 //
 function int mutate(){
-    nucleotides[Math.random2(0, sequence.cap()-1)] =>  sequence[Math.random2(0, nucleotides.cap()-1)];
+    goal[Math.random2(0, sequence.cap()-1)] =>  sequence[Math.random2(0, goal.cap()-1)];
 }
 function int mutate2(){
-    nucleotides[Math.random2(0, sequence2.cap()-1)] =>  sequence2[Math.random2(0, nucleotides.cap()-1)];
+    goal[Math.random2(0, sequence2.cap()-1)] =>  sequence2[Math.random2(0, goal.cap()-1)];
 }
 
 function void playSequence (int sequence[]){
     while (true){
         for( 0 => int i; i < (sequence.cap()-1); i++){
             Std.mtof(sequence[i]) => s.freq;
-            222::ms => now;
+            122::ms => now;
         }
         intChance(30, 1, 0) => int chance;
         if(chance == 1)
@@ -79,7 +86,7 @@ function void playSequence2 (int seq2[]){
     while (true){
         for( 0 => int i; i < (sequence2.cap()-1); i++){
             Std.mtof(seq2[i])  => s2.freq;
-            222::ms => now;
+            100::ms => now;
         }
         intChance(10, 1, 0) => int chance;
         if(chance == 1)
