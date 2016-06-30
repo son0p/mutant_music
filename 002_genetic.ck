@@ -1,3 +1,8 @@
+// dos melodías intentan alcanzar una melodía de referencia
+// a través de mutaciones a melodías aleatorias
+
+// se crean los generadores de sonido
+// TODO: no repetir código, crearlos con un for
 SinOsc s;
 Pan2 p;
 JCRev r;
@@ -11,10 +16,12 @@ JCRev r2;
 1.0 => p2.pan;
 0.05 => s2.gain;
 0.03 => r2.mix;
+
+// cadena de sonido
 s => r => p => dac;
 s2 => r2 => p2 => dac;
 
-// esta es la melodía que el sistema debe alcanzar
+// esta es la melodía de referencia 
 [ 64, 66, 68, 71, 73] @=> int goal[];
 
 // se inicializan los arreglos
@@ -23,10 +30,16 @@ int sequence[goal.cap()];
 int sequence2[goal.cap()];
 
 // se crean secuencias aleatorias
+// TODO: encontrar mejor solución
+function int createRandomNote()
+{
+  Math.random2(10, 127) => int note;
+  return note;
+}
 for( 0 => int i; i < goal.cap()-1; i++)
   {
-    Math.random2(10, 127) =>  sequence[i];
-    Math.random2(10, 127) =>  sequence2[i];
+    createRandomNote() =>  sequence[i];
+    createRandomNote() =>  sequence2[i];
   }
 
 // una función para probabilidad
@@ -43,6 +56,9 @@ function int intChance( int percent, int value1, int value2)
 }
 
 // funciones para mutar los arreglos aleatorios
+// TODO: una sola función debería poder hacer eso
+// TODO: la base de la mutación debe adaptarse a un nuevo arreglo que 
+//       ya contiene las notas encontradas
 function int mutate(){
     goal[Math.random2(0, sequence.cap()-1)] =>  sequence[Math.random2(0, goal.cap()-1)];
 }
@@ -51,6 +67,10 @@ function int mutate2(){
 }
 
 // evalua que tan distante esta de la meta
+// TODO: dejar fijas las notas que ya fueron encontradas
+// TODO: en un solo if debería poder evaluarse ambas secuencias
+// TODO: es feo evaluar cada x milisegundos, esto debería ser
+//       comandado por eventos
 function void evaluate()
 {
   while(true)
@@ -71,7 +91,11 @@ function void evaluate()
  
 }
 
-// suena las secuencias
+// suena las secuencias y se mutan según una probabilidad
+// establecida
+// TODO: se debería poder tocar las dos secuencias con una
+//       sola función
+// TODO: en el futuro la función debería recibir argumentos
 function void playSequence (int sequence[]){
     while (true){
         for( 0 => int i; i < (sequence.cap()-1); i++){
