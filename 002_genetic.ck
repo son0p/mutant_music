@@ -1,25 +1,12 @@
 // dos melodías intentan alcanzar una melodía de referencia
 // a través de mutaciones a melodías aleatorias
 
-// se crean los generadores de sonido
-// TODO: no repetir código, crearlos con un for
-SinOsc s;
-Pan2 p;
-JCRev r; // cosmético
-0.05 => s.gain;
-1.0 => p.pan;
-0.03 => r.mix;
-
-SinOsc s2;
-Pan2  p2;
-JCRev r2; // cosmético
--1.0 => p2.pan;
-0.05 => s2.gain;
-0.03 => r2.mix;
-
-// cadena de sonido
-s => r => p => dac;
-s2 => r2 => p2 => dac;
+// Tempo
+333.33::ms => dur tick;
+tick * 4 => dur beat;
+16 => int loopSize;
+int loop4;
+0 => int metro;
 
 // esta es la melodía de referencia 
 [ 64, 66, 68, 71, 73] @=> int goal[];
@@ -29,6 +16,53 @@ int seq[5];
 int sequence[goal.cap()];
 int sequence2[goal.cap()];
 
+4 => int C; // numero de melodías
+Osc s[C];
+Pan2 p[C];
+ADSR e[C];
+JCRev r[C];
+Gain master;
+
+// se crean los generadores de sonido
+// TODO: no repetir código, crearlos con un for
+fun void melodies(float octave, int d, Osc Osc)
+{
+  for( 0 => int i; i < C; i++ )
+    {
+      s[i] => e[i] => r[i] => master => p[i] => dac;
+      ( 0.02::second, 0.01::second, (1.0/C), 0.6::second ) => e[i].set;
+      r[i].mix(0.09);
+      s[i].gain(0.3/C);
+      for( 0 => int ii; ii < goal.cap()-1; ii++)
+        {
+          createRandomNote() =>  sequence[ii];
+          createRandomNote() =>  sequence2[ii];
+        }
+    }
+  while(true){
+    // for ( 0 => int ii ; ii < C ; ++ii ) { e[ii].keyOn(); }
+    // e[loop4].keyOn();
+    // tick/d => now;
+
+    for ( 0 => int ii ; ii < C ; ++ii ) { e[ii].keyOff(); Math.random2f(-0.5, 0.5) => p[ii].pan; }
+    // e[loop4].keyOff();
+    // tick/d => now;
+
+    for( 0 => int i; i < (sequence.cap()-1); i++)
+      {
+        e[i].keyOn();
+        Std.mtof(sequence[i]) => s[i].freq;
+        d::ms => now;
+      }
+    intChance(30, 1, 0) => int chance;
+    if(chance == 1)
+      {
+        mutate();
+        <<< "muta melodía derecha", " => \n">>>;
+      }
+  }
+}
+
 // se crean secuencias aleatorias
 // TODO: encontrar mejor solución
 function int createRandomNote()
@@ -36,11 +70,7 @@ function int createRandomNote()
   Math.random2(10, 127) => int note;
   return note;
 }
-for( 0 => int i; i < goal.cap()-1; i++)
-  {
-    createRandomNote() =>  sequence[i];
-    createRandomNote() =>  sequence2[i];
-  }
+
 
 // una función para probabilidad
 function int intChance( int percent, int value1, int value2)
@@ -92,51 +122,11 @@ function void evaluate()
     }
 }
 
-// suena las secuencias y se mutan según una probabilidad
-// establecida
-// TODO: se debería poder tocar las dos secuencias con una
-//       sola función
-// TODO: en el futuro la función debería recibir argumentos
-function void playSequence (int sequence[])
-{
-  while (true)
-    {
-      for( 0 => int i; i < (sequence.cap()-1); i++)
-        {
-          Std.mtof(sequence[i]) => s.freq;
-          177::ms => now;
-        }
-      intChance(30, 1, 0) => int chance;
-      if(chance == 1)
-        {
-          mutate();
-          <<< "muta melodía derecha", " => \n">>>;
-        }
-    }
-}
-
-function void playSequence2 (int seq2[])
-{
-  while (true)
-    {
-      for( 0 => int i; i < (sequence2.cap()-1); i++)
-        {
-          Std.mtof(seq2[i])  => s2.freq;
-          177::ms => now;
-        }
-      intChance(10, 1, 0) => int chance;
-      if(chance == 1)
-        {
-          mutate2();
-          <<< " <= ", "muta melodía izquierda \n">>>;
-        }
-    }
-}
+SinOsc myOsc;
 
 // llama las funciones
-spork~  playSequence(sequence);
-spork~  playSequence2(sequence2);
-spork~ evaluate();
+spork~  melodies(1.0, 100, myOsc );
+//spork~ evaluate();
 
 // mantiene vivos los spork
 while(true){ 10::ms => now;}
