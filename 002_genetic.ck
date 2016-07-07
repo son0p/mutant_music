@@ -16,15 +16,22 @@ int seq[5];
 int sequence[goal.cap()];
 int sequence2[goal.cap()];
 
-4 => int C; // numero de melodías
+8 => int C; // numero de melodías
+int melodyNumber;
 Osc s[C];
 Pan2 p[C];
 ADSR e[C];
 JCRev r[C];
 Gain master;
 
+
+for( 0 => int ii; ii < goal.cap()-1; ii++)
+  {
+    createRandomNote() =>  sequence[ii];
+    createRandomNote() =>  sequence2[ii];
+  }
+
 // se crean los generadores de sonido
-// TODO: no repetir código, crearlos con un for
 fun void melodies(float octave, int d, Osc Osc)
 {
   for( 0 => int i; i < C; i++ )
@@ -33,32 +40,24 @@ fun void melodies(float octave, int d, Osc Osc)
       ( 0.02::second, 0.01::second, (1.0/C), 0.6::second ) => e[i].set;
       r[i].mix(0.09);
       s[i].gain(0.3/C);
-      for( 0 => int ii; ii < goal.cap()-1; ii++)
-        {
-          createRandomNote() =>  sequence[ii];
-          createRandomNote() =>  sequence2[ii];
-        }
+      e[i].keyOff();
+      Math.random2f(-0.5, 0.5) => p[i].pan;  // diferente paneo para cada uno ? verificar
+      i => melodyNumber;
     }
   while(true){
-    // for ( 0 => int ii ; ii < C ; ++ii ) { e[ii].keyOn(); }
-    // e[loop4].keyOn();
-    // tick/d => now;
-
-    for ( 0 => int ii ; ii < C ; ++ii ) { e[ii].keyOff(); Math.random2f(-0.5, 0.5) => p[ii].pan; }
-    // e[loop4].keyOff();
-    // tick/d => now;
-
-    for( 0 => int i; i < (sequence.cap()-1); i++)
+    for( 0 => int i; i < sequence.cap()-1; i++)
       {
-        e[i].keyOn();
-        Std.mtof(sequence[i]) => s[i].freq;
+        Math.random2(0, C-1) => int notePos;
+        e[notePos].keyOn();
+        Std.mtof(sequence[i]) => s[notePos].freq;
         d::ms => now;
       }
     intChance(30, 1, 0) => int chance;
     if(chance == 1)
       {
         mutate();
-        <<< "muta melodía derecha", " => \n">>>;
+        // TODO: solo imprime un valor, error en el punto de donde toma el valor
+        <<< "muta melodía ",melodyNumber,"\n">>>;
       }
   }
 }
