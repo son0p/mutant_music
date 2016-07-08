@@ -11,12 +11,7 @@ int loop4;
 // esta es la melodía de referencia 
 [ 64, 66, 68, 71, 73] @=> int goal[];
 
-// se inicializan los arreglos
-int seq[5];
-int sequence[goal.cap()];
-int sequence2[goal.cap()];
-
-8 => int C; // numero de melodías
+2 => int C; // numero de melodías
 int melodyNumber;
 Osc s[C];
 Pan2 p[C];
@@ -24,41 +19,53 @@ ADSR e[C];
 JCRev r[C];
 Gain master;
 
+// se inicializan los arreglos
+int sequence[C][goal.cap()];
 
-for( 0 => int ii; ii < goal.cap()-1; ii++)
+// se llenan los arrays con notas aleatorias
+for (0 => int i; i < C; i++)
+{
+  for( 0 => int ii; ii < goal.cap(); ii++)
   {
-    createRandomNote() =>  sequence[ii];
-    createRandomNote() =>  sequence2[ii];
-  }
+    createRandomNote() => sequence[i][ii];
+    <<< sequence[i][ii] >>>;
+  }  
+}
+
 
 // se crean los generadores de sonido
 fun void melodies(float octave, int d, Osc Osc)
 {
   for( 0 => int i; i < C; i++ )
+  {
+    s[i] => e[i] => r[i] => master => p[i] => dac;
+    ( 0.02::second, 0.01::second, (1.0/C), 0.6::second ) => e[i].set;
+    r[i].mix(0.09);
+    s[i].gain(0.3/C);
+    e[i].keyOff();
+    Math.random2f(-0.5, 0.5) => p[i].pan;  // diferente paneo para cada uno ? verificar
+    i => melodyNumber;
+  }
+  while(true)
+  {
+    for( 0 => int i; i < C; i++ )
     {
-      s[i] => e[i] => r[i] => master => p[i] => dac;
-      ( 0.02::second, 0.01::second, (1.0/C), 0.6::second ) => e[i].set;
-      r[i].mix(0.09);
-      s[i].gain(0.3/C);
-      e[i].keyOff();
-      Math.random2f(-0.5, 0.5) => p[i].pan;  // diferente paneo para cada uno ? verificar
-      i => melodyNumber;
-    }
-  while(true){
-    for( 0 => int i; i < sequence.cap()-1; i++)
+      for( 0 => int ii; ii < sequence.cap()-1; ii++)
       {
         Math.random2(0, C-1) => int notePos;
         e[notePos].keyOn();
-        Std.mtof(sequence[i]) => s[notePos].freq;
+        Std.mtof(sequence[i][ii]) => s[notePos].freq;
         d::ms => now;
       }
-    intChance(30, 1, 0) => int chance;
-    if(chance == 1)
+      intChance(50, 1, 0) => int chance;
+      if(chance == 1)
       {
-        mutate();
+         mutate();
         // TODO: solo imprime un valor, error en el punto de donde toma el valor
         <<< "muta melodía ",melodyNumber,"\n">>>;
-      }
+      }    
+    }
+    
   }
 }
 
@@ -85,40 +92,32 @@ function int intChance( int percent, int value1, int value2)
 }
 
 // funciones para mutar los arreglos aleatorios
-// TODO: una sola función debería poder hacer eso
 // TODO: la base de la mutación debe adaptarse a un nuevo arreglo que 
 //       ya contiene las notas encontradas
 function int mutate()
 {
-  goal[Math.random2(0, sequence.cap()-1)] =>  sequence[Math.random2(0, goal.cap()-1)];
+  goal[Math.random2(0, sequence.cap()-1)] => sequence[Math.random2(0, C-2)][Math.random2(0, goal.cap()-1)];
 }
-function int mutate2()
-{
-  goal[Math.random2(0, sequence2.cap()-1)] =>  sequence2[Math.random2(0, goal.cap()-1)];
-}
+
 
 // evalua que tan distante esta de la meta
 // TODO: dejar fijas las notas que ya fueron encontradas
-// TODO: en un solo if debería poder evaluarse ambas secuencias
 // TODO: es feo evaluar cada x milisegundos, esto debería ser
 //       comandado por eventos
 function void evaluate()
 {
   while(true)
+  {
+    for( 0 => int i; i < C; i++)
     {
-      for( 0 => int i; i < goal.cap()-1; i++)
+      for( 0 => int ii; ii < goal.cap(); ii++)
+        if(sequence[i][ii] == goal[ii])
         {
-          if(sequence[i] == goal[i])
-            {
-              <<< "           melodía derecha: ** encontró **  ",  goal[i], "\n" >>>;
-            }
-          if( sequence2[i] == goal[i])
-            {
-              <<< "           melodía izquierda: ** encontró ** ",  goal[i], "\n" >>>;
-            }
-          500::ms => now;
+          <<< ": ** encontró coincidencia**  ",  goal[i], "\n" >>>;
         }
+      500::ms => now;
     }
+  }         
 }
 
 SinOsc myOsc;
