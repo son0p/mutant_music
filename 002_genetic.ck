@@ -39,17 +39,18 @@ fun void melodies(float octave, int d, Osc Osc)
   for( 0 => int i; i < C; i++ )
   {
     s[i] => e[i] => r[i] => master => p[i] => dac;
-    ( 0.02::second, 0.01::second, (1.0/C), 0.6::second ) => e[i].set;
+    ( 0.01::second, 0.01::second, (1.0/C), 0.01::second ) => e[i].set;
     r[i].mix(0.09);
     s[i].gain(0.3/C);
     e[i].keyOff();
-    Math.random2f(-0.5, 0.5) => p[i].pan;  // diferente paneo para cada uno ? verificar
+    
     i => melodyNumber;
   }
   while(true)
   {
     for( 0 => int i; i < C; i++ )
     {
+      Math.random2f(-1.0, 1.0) => p[i].pan;  // diferente paneo para cada uno ? verificar
       for( 0 => int ii; ii < sequence.cap()-1; ii++)
       {
         Math.random2(0, C-1) => int notePos;
@@ -61,7 +62,6 @@ fun void melodies(float octave, int d, Osc Osc)
       if(chance == 1)
       {
          mutate();
-
       }
     }
   }
@@ -90,40 +90,29 @@ function int intChance( int percent, int value1, int value2)
 }
 
 // funciones para mutar los arreglos aleatorios
-// TODO: la base de la mutación debe adaptarse a un nuevo arreglo que 
+// TODO: la base de la mutación debe adaptarse a un nuevo arreglo que
 //       ya contiene las notas encontradas
 function int mutate()
 {
   Math.random2(0, C-1) => int seqToMutate;
-  goal[Math.random2(0, sequence.cap()-1)] => sequence[seqToMutate][Math.random2(0, goal.cap()-1)];
-  <<< "muta melodía ",seqToMutate,"\n">>>;
-}
-
-
-// evalua que tan distante esta de la meta
-// TODO: dejar fijas las notas que ya fueron encontradas
-// TODO: es feo evaluar cada x milisegundos, esto debería ser
-//       comandado por eventos
-function void evaluate()
-{
-  while(true)
+  Math.random2(0, goal.cap()-1) => int noteToMutate;
+  // se evalua si la nota existente es igual a la melodía de referencia,
+  if(sequence[seqToMutate][noteToMutate] == goal[noteToMutate])
   {
-    for( 0 => int i; i < C; i++)
-    {
-      for( 0 => int ii; ii < goal.cap(); ii++)
-        if(sequence[i][ii] == goal[ii])
-        {
-          <<< ": ** encontró coincidencia**  ",  goal[i], "\n" >>>;
-        }
-      500::ms => now;
-    }
-  }         
+    <<< ": ** encontró coincidencia**  ",  goal[noteToMutate], "\n" >>>;
+  }
+  else
+  {
+    goal[Math.random2(0, sequence.cap()-1)] => sequence[seqToMutate][noteToMutate];
+    <<< "muta melodía ",seqToMutate,"\n">>>;
+  }
 }
 
+// ---------- 
 SinOsc myOsc;
 
 // llama las funciones
-spork~  melodies(1.0, 100, myOsc );
+spork~  melodies(1.0, 200, myOsc );
 //spork~ evaluate();
 
 // mantiene vivos los spork
