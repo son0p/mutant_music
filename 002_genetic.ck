@@ -2,7 +2,7 @@
 // a través de mutaciones a melodías aleatorias
 
 // Tempo
-333.33::ms => dur tick;
+33::ms => dur tick;
 tick * 4 => dur beat;
 16 => int loopSize;
 int loop4;
@@ -11,7 +11,7 @@ int loop4;
 // esta es la melodía de referencia 
 [ 64, 66, 68, 71, 73] @=> int goal[];
 
-2 => int C; // numero de melodías
+4 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
 int melodyNumber;
 Osc s[C];
 Pan2 p[C];
@@ -39,31 +39,10 @@ fun void melodies(float octave, int d, Osc Osc)
   for( 0 => int i; i < C; i++ )
   {
     s[i] => e[i] => r[i] => master => p[i] => dac;
-    ( 0.01::second, 0.01::second, (1.0/C), 0.01::second ) => e[i].set;
+    ( 0.03::second, 0.01::second, (1.0/C), 0.01::second ) => e[i].set;
     r[i].mix(0.09);
     s[i].gain(0.3/C);
     e[i].keyOff();
-    
-    i => melodyNumber;
-  }
-  while(true)
-  {
-    for( 0 => int i; i < C; i++ )
-    {
-      Math.random2f(-1.0, 1.0) => p[i].pan;  // diferente paneo para cada uno ? verificar
-      for( 0 => int ii; ii < sequence.cap()-1; ii++)
-      {
-        Math.random2(0, C-1) => int notePos;
-        e[notePos].keyOn();
-        Std.mtof(sequence[i][ii]) => s[notePos].freq;
-        d::ms => now;
-      }
-      intChance(30, 1, 0) => int chance;
-      if(chance == 1)
-      {
-         mutate();
-      }
-    }
   }
 }
 
@@ -75,6 +54,28 @@ function int createRandomNote()
   return note;
 }
 
+// se recorren las secuencias
+function void playSequences(int sequenceToPlay)
+{
+  while(true)
+  {
+    // TODO: dividir el panorama en el número de melodías con la función
+    //       para cambio de rango.
+    Math.random2f(-1.0, 1.0) => p[sequenceToPlay].pan;
+    
+    for( 0 => int ii; ii < sequence[sequenceToPlay].cap()-1; ii++)
+      {
+        e[sequenceToPlay].keyOn();
+        Std.mtof(sequence[sequenceToPlay][ii]) => s[sequenceToPlay].freq;
+        beat => now;
+      }
+    intChance(30, 1, 0) => int chance;
+    if(chance == 1)
+      {
+        mutate();
+      }
+  }
+}
 
 // una función para probabilidad
 function int intChance( int percent, int value1, int value2)
@@ -112,8 +113,12 @@ function int mutate()
 SinOsc myOsc;
 
 // llama las funciones
-spork~  melodies(1.0, 200, myOsc );
-//spork~ evaluate();
+spork~  melodies(1.0, 200, myOsc);
+
+for( 0 => int i; i < C; i++)
+{
+  spork~ playSequences(i);
+}
 
 // mantiene vivos los spork
 while(true){ 10::ms => now;}
