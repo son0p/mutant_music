@@ -57,15 +57,13 @@ fun void melodies(float octave, int d, Osc Osc)
         Std.mtof(sequence[i][ii]) => s[notePos].freq;
         d::ms => now;
       }
-      intChance(50, 1, 0) => int chance;
+      intChance(30, 1, 0) => int chance;
       if(chance == 1)
       {
          mutate();
-        // TODO: solo imprime un valor, error en el punto de donde toma el valor
-        <<< "muta melodía ",melodyNumber,"\n">>>;
-      }    
+
+      }
     }
-    
   }
 }
 
@@ -96,7 +94,9 @@ function int intChance( int percent, int value1, int value2)
 //       ya contiene las notas encontradas
 function int mutate()
 {
-  goal[Math.random2(0, sequence.cap()-1)] => sequence[Math.random2(0, C-2)][Math.random2(0, goal.cap()-1)];
+  Math.random2(0, C-1) => int seqToMutate;
+  goal[Math.random2(0, sequence.cap()-1)] => sequence[seqToMutate][Math.random2(0, goal.cap()-1)];
+  <<< "muta melodía ",seqToMutate,"\n">>>;
 }
 
 
