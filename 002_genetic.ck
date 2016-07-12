@@ -8,10 +8,13 @@ tick * 4 => dur beat;
 int loop4;
 0 => int metro;
 
-// esta es la melodía de referencia 
-[ 64, 66, 68, 71, 73] @=> int goal[];
+// esta es la  base de posibilidades
+[ 64, 66, 68, 71, 73] @=> int base[];
 
-4 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
+// esta es la secuencia de referencia 
+[ 68, 66, 64, 71, 73] @=> int goal[];
+
+2 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
 int melodyNumber;
 Osc s[C];
 Pan2 p[C];
@@ -62,18 +65,35 @@ function void playSequences(int sequenceToPlay)
     // TODO: dividir el panorama en el número de melodías con la función
     //       para cambio de rango.
     Math.random2f(-1.0, 1.0) => p[sequenceToPlay].pan;
-    
-    for( 0 => int ii; ii < sequence[sequenceToPlay].cap()-1; ii++)
+
+    for( 0 => int i; i < sequence[sequenceToPlay].cap(); i++ )
       {
         e[sequenceToPlay].keyOn();
-        Std.mtof(sequence[sequenceToPlay][ii]) => s[sequenceToPlay].freq;
+        Std.mtof(sequence[sequenceToPlay][i]) => s[sequenceToPlay].freq;
         beat => now;
+        e[sequenceToPlay].keyOff();
       }
-    intChance(30, 1, 0) => int chance;
+    2*beat => now; // silencio para diferenciar la melodía
+
+    // según una probabilidad, genera una mutación en una nota
+    intChance(50, 1, 0) => int chance;
     if(chance == 1)
       {
         mutate();
       }
+
+    // revisa si lo logró comparando los arrays
+    // TODO: esto no esta funcionando bien, reporta antes de estar completas
+    for( 0 => int i; i < C; i++ )
+    {
+      for( 0 => int ii; ii < sequence.cap(); ii++ )
+      {
+        if( sequence[i][ii] == goal[ii] )
+        {
+          <<< "Secuencia ", i, " completa " >>>;
+        }
+      }
+    }
   }
 }
 
@@ -90,13 +110,13 @@ function int intChance( int percent, int value1, int value2)
   return selected;
 }
 
-// funciones para mutar los arreglos aleatorios
+// funcion para mutar los arreglos aleatorios
 // TODO: la base de la mutación debe adaptarse a un nuevo arreglo que
 //       ya contiene las notas encontradas
 function int mutate()
 {
   Math.random2(0, C-1) => int seqToMutate;
-  Math.random2(0, goal.cap()-1) => int noteToMutate;
+  Math.random2(0, base.cap()-1) => int noteToMutate;
   // se evalua si la nota existente es igual a la melodía de referencia,
   if(sequence[seqToMutate][noteToMutate] == goal[noteToMutate])
   {
@@ -104,7 +124,7 @@ function int mutate()
   }
   else
   {
-    goal[Math.random2(0, sequence.cap()-1)] => sequence[seqToMutate][noteToMutate];
+    base[Math.random2(0, base.cap()-1)] => sequence[seqToMutate][noteToMutate];
     <<< "muta melodía ",seqToMutate,"\n">>>;
   }
 }
@@ -112,9 +132,10 @@ function int mutate()
 // ---------- 
 SinOsc myOsc;
 
-// llama las funciones
+// inicializa los osciladores
 spork~  melodies(1.0, 200, myOsc);
 
+// ejecuta y suena las secuencias
 for( 0 => int i; i < C; i++)
 {
   spork~ playSequences(i);
