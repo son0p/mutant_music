@@ -14,7 +14,7 @@ int loop4;
 // esta es la secuencia de referencia 
 [ 68, 66, 64, 71, 73] @=> int goal[];
 
-2 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
+1 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
 int melodyNumber;
 Osc s[C];
 Pan2 p[C];
@@ -25,19 +25,8 @@ Gain master;
 // se inicializan los arreglos
 int sequence[C][goal.cap()];
 
-// se llenan los arrays con notas aleatorias
-for (0 => int i; i < C; i++)
-{
-  for( 0 => int ii; ii < goal.cap(); ii++)
-  {
-    createRandomNote() => sequence[i][ii];
-    <<< sequence[i][ii] >>>;
-  }  
-}
-
-
 // se crean los generadores de sonido
-fun void melodies(float octave, int d, Osc Osc)
+fun void melodies(float octave, Osc Osc)
 {
   for( 0 => int i; i < C; i++ )
   {
@@ -49,52 +38,72 @@ fun void melodies(float octave, int d, Osc Osc)
   }
 }
 
-// se crean secuencias aleatorias
-// TODO: encontrar mejor solución
+// --- crea secuencias
+
 function int createRandomNote()
 {
   Math.random2(10, 127) => int note;
   return note;
 }
 
-// se recorren las secuencias
+// se llenan las secuencias con notas aleatorias
+for (0 => int i; i < C; i++)
+  {
+    for( 0 => int ii; ii < goal.cap(); ii++)
+      {
+        createRandomNote() => sequence[i][ii];
+        <<< sequence[i][ii] >>>;
+      }  
+  }
+
+// --- suena secuencias
 function void playSequences(int sequenceToPlay)
 {
+  // TODO: dividir el panorama en el número de melodías con la función
+  //       para cambio de rango.
+  Math.random2f(-1.0, 1.0) => p[sequenceToPlay].pan;
+
+  sequence[sequenceToPlay].cap() => int limit;
+
   while(true)
   {
-    // TODO: dividir el panorama en el número de melodías con la función
-    //       para cambio de rango.
-    Math.random2f(-1.0, 1.0) => p[sequenceToPlay].pan;
-
-    for( 0 => int i; i < sequence[sequenceToPlay].cap(); i++ )
-      {
+    for( 0 => int i; i < limit; i++ )
+    {
         e[sequenceToPlay].keyOn();
         Std.mtof(sequence[sequenceToPlay][i]) => s[sequenceToPlay].freq;
         beat => now;
         e[sequenceToPlay].keyOff();
-      }
+    }
     2*beat => now; // silencio para diferenciar la melodía
-
-    // según una probabilidad, genera una mutación en una nota
-    intChance(50, 1, 0) => int chance;
-    if(chance == 1)
-      {
-        mutate();
-      }
 
     // revisa si lo logró comparando los arrays
     // TODO: esto no esta funcionando bien, reporta antes de estar completas
     for( 0 => int i; i < C; i++ )
     {
-      for( 0 => int ii; ii < sequence.cap(); ii++ )
+      0 => int matched;
+      for( 0 => int ii; ii < limit; ii++ )
       {
         if( sequence[i][ii] == goal[ii] )
         {
-          <<< "Secuencia ", i, " completa " >>>;
+          matched + 1 => matched;
+          
         }
       }
+      <<< "            ---- matched = ",matched >>>;
+      if( matched == limit )
+      {
+        <<< "Secuencia ", i, " completa " >>>;
+      }
+    }
+
+    // según una probabilidad, genera una mutación en una nota
+    intChance(50, 1, 0) => int chance;
+    if(chance == 1)
+    {
+        mutate();
     }
   }
+ 
 }
 
 // una función para probabilidad
@@ -133,7 +142,7 @@ function int mutate()
 SinOsc myOsc;
 
 // inicializa los osciladores
-spork~  melodies(1.0, 200, myOsc);
+spork~  melodies(1.0,  myOsc);
 
 // ejecuta y suena las secuencias
 for( 0 => int i; i < C; i++)
