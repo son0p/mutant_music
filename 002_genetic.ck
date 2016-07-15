@@ -1,20 +1,17 @@
 // dos melodías intentan alcanzar una melodía de referencia
 // a través de mutaciones a melodías aleatorias
 
-// Tempo
+// tempo
 33::ms => dur tick;
 tick * 4 => dur beat;
-16 => int loopSize;
-int loop4;
-0 => int metro;
 
 // esta es la  base de posibilidades
 [ 64, 66, 68, 71, 73] @=> int base[];
 
-// esta es la secuencia de referencia 
+// esta es la secuencia de referencia
 [ 68, 66, 64, 71, 73] @=> int goal[];
 
-1 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
+6 => int C; // numero de melodías BUG:: se desborda el array si son mas de goal
 int melodyNumber;
 Osc s[C];
 Pan2 p[C];
@@ -33,14 +30,13 @@ fun void melodies(float octave, Osc Osc)
     s[i] => e[i] => r[i] => master => p[i] => dac;
     ( 0.03::second, 0.01::second, (1.0/C), 0.01::second ) => e[i].set;
     r[i].mix(0.09);
-    s[i].gain(0.3/C);
+    s[i].gain(0.1/C);
     e[i].keyOff();
   }
 }
 
-// --- crea secuencias
-
-function int createRandomNote()
+// funcion notas aleatorias
+fun int createRandomNote()
 {
   Math.random2(10, 127) => int note;
   return note;
@@ -53,31 +49,30 @@ for (0 => int i; i < C; i++)
       {
         createRandomNote() => sequence[i][ii];
         <<< sequence[i][ii] >>>;
-      }  
+      }
   }
 
 // --- suena secuencias
-function void playSequences(int sequenceToPlay)
+fun void playSequences(int sequenceToPlay)
 {
   // TODO: dividir el panorama en el número de melodías con la función
   //       para cambio de rango.
   Math.random2f(-1.0, 1.0) => p[sequenceToPlay].pan;
-
+  // defino límite 
   sequence[sequenceToPlay].cap() => int limit;
-
+  // selecciona nota y la suena 
   while(true)
   {
     for( 0 => int i; i < limit; i++ )
     {
-        e[sequenceToPlay].keyOn();
-        Std.mtof(sequence[sequenceToPlay][i]) => s[sequenceToPlay].freq;
-        beat => now;
-        e[sequenceToPlay].keyOff();
+      Std.mtof(sequence[sequenceToPlay][i]) => s[sequenceToPlay].freq;
+      e[sequenceToPlay].keyOn();
+      beat => now;
+      e[sequenceToPlay].keyOff();
     }
-    2*beat => now; // silencio para diferenciar la melodía
+    2*beat => now; // silencio para diferenciar la melodía (estético)
 
     // revisa si lo logró comparando los arrays
-    // TODO: esto no esta funcionando bien, reporta antes de estar completas
     for( 0 => int i; i < C; i++ )
     {
       0 => int matched;
@@ -86,7 +81,6 @@ function void playSequences(int sequenceToPlay)
         if( sequence[i][ii] == goal[ii] )
         {
           matched + 1 => matched;
-          
         }
       }
       <<< "            ---- matched = ",matched >>>;
@@ -97,17 +91,16 @@ function void playSequences(int sequenceToPlay)
     }
 
     // según una probabilidad, genera una mutación en una nota
-    intChance(50, 1, 0) => int chance;
+    intChance(Math.random2(20, 60), 1, 0) => int chance;
     if(chance == 1)
     {
-        mutate();
+      mutate();
     }
   }
- 
 }
 
-// una función para probabilidad
-function int intChance( int percent, int value1, int value2)
+// función para probabilidad
+fun int intChance( int percent, int value1, int value2)
 {
   int percentArray[100];
   for( 0 => int i; i < 100; i++)
@@ -122,7 +115,7 @@ function int intChance( int percent, int value1, int value2)
 // funcion para mutar los arreglos aleatorios
 // TODO: la base de la mutación debe adaptarse a un nuevo arreglo que
 //       ya contiene las notas encontradas
-function int mutate()
+fun int mutate()
 {
   Math.random2(0, C-1) => int seqToMutate;
   Math.random2(0, base.cap()-1) => int noteToMutate;
